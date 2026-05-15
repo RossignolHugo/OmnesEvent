@@ -4,7 +4,6 @@ body {
     color: #222;
 }
 
-/*Bare de navigation*/
 .bar {
     width: 100%;
     background: #ffffff;
@@ -56,15 +55,12 @@ body {
     background: #f0f0f0;
 }
 
-
-/* Authentification */
 .Navigation-autentification {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-/* UTILISATEUR */
 .bar-utilisateur {
     font-weight: 600;
     display: flex;
