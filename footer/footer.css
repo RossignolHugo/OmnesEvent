@@ -1,0 +1,43 @@
+.footer {
+    background: #111;
+    color: #fff;
+    padding: 40px 20px;
+    margin-top: 40px;
+}
+
+.footer-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.footer-logo {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.footer-logo em {
+    color: #4da3ff;
+    font-style: normal;
+}
+
+.footer-lien {
+    margin-bottom: 20px;
+}
+
+.footer-lien a {
+    color: #ccc;
+    margin: 0 12px;
+    font-size: 1rem;
+    transition: 0.2s;
+}
+
+.footer-lien a:hover {
+    color: #fff;
+}
+
+.footer-copy {
+    font-size: 0.9rem;
+    color: #888;
+}
