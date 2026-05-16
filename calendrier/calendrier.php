@@ -12,7 +12,6 @@
 <?php
  require_once __DIR__ . '/../header/header.php';
 
-// Récupération des infos utiles uniquement
 $sql = "SELECT 
             id,
             titre,
@@ -58,10 +57,9 @@ $evenements = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
 
-        <!-- Zone d'affichage des détails -->
+        <!-- affichage des détails -->
         <div id="detailsEvenement" class="details-evenement"></div>
 
-        <!-- envoi evenement a js -->
         <script>
             const EVENEMENTS = <?= json_encode($evenements) ?>;
         </script>
