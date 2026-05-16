@@ -1,6 +1,6 @@
 <?php 
-require_once __DIR__ . '/../BDD.php'; 
-session_start();
+require_once __DIR__ . '/../BDD.php';
+require_once __DIR__ . '/../includes/functions.php';
 ?>
 
 <link rel="stylesheet" href="../header/header.css">
@@ -18,6 +18,7 @@ session_start();
                     <a href="../profil/profil.php">👤 Mon profil</a>
 
                     <?php if (estOrganisateur() || estAdmin()): ?>
+                        <a href="../organisateur/dashboard.php">📊 Dashboard organisateur</a>
                         <a href="../evenement/creer.php">✚ Créer un event</a>
                     <?php endif; ?>
 
@@ -29,7 +30,7 @@ session_start();
             <div class="Navigation-autentification">
                 <?php if (estConnecte()): ?>
                     <span class="bar-utilisateur">
-                        👤 <?= h($_SESSION['pseudo']) ?>
+                        👤 <?= h(nomAfficheUtilisateur()) ?>
                         <span class="role-badge"><?= h($_SESSION['role']) ?></span>
                     </span>
                     <a href="../connexion/deconnexion.php" class="btn-2">Déconnexion</a>
