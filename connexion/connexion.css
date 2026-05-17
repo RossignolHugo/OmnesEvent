@@ -1,0 +1,90 @@
+.form-carte {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 30px;
+    max-width: 440px;
+    margin: 40px auto;
+}
+
+.form-carte h1 { font-size: 1.6rem; margin-bottom: 20px; }
+
+.form-carte label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #444;
+    margin: 12px 0 4px;
+}
+.form-carte label petit { 
+    font-weight: 400; 
+    color: #999; 
+}
+
+.form-carte input,
+.form-carte select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+.form-carte input:focus,
+.form-carte select:focus { 
+    outline: none; 
+    border-color: #007bff; 
+}
+
+/* 2 colonne*/
+.form-colonne {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.form-carte button[type=submit] {
+    width: 100%;
+    margin-top: 18px;
+    padding: 10px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.form-carte button[type=submit]:hover { 
+    background: #0056b3; 
+}
+
+.lien { 
+    text-align: center; 
+    margin-top: 16px; 
+    font-size: 0.9rem; 
+    color: #666; 
+}
+.lien a { 
+    color: #007bff; 
+}
+
+.erreur { 
+    color: #c0392b; 
+    background: #fde8e8; 
+    padding: 10px; 
+    border-radius: 6px; 
+    margin-bottom: 12px; 
+    font-size: 0.9rem; 
+}
+.succes { 
+    color: #1e7e34; 
+    background: #e8f8e8; 
+    padding: 10px; 
+    border-radius: 6px; 
+    margin-bottom: 12px; 
+    font-size: 0.9rem; }
+
+@media (max-width: 500px) {
+    .form-carte { margin: 20px 14px; padding: 22px 16px; }
+    .form-colonne { grid-template-columns: 1fr; }
+}
