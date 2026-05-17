@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Inscription — OmnesEvent</title>
+    <title>OmnesEvent-Inscription</title>
     <link rel="stylesheet" href="../header/header.css">
     <link rel="stylesheet" href="connexion.css">
 </head>

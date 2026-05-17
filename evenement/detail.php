@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../BDD.php';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 $id = (int) ($_GET['id'] ?? 0);
 $stmt = $pdo->prepare("SELECT e.*, u.prenom, u.nom,
