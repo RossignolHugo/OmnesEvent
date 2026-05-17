@@ -251,7 +251,14 @@ $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'J
             </a>
           </h3>
           <p class="event-meta">
-            📍 <?= h($ev['lieu']) ?> · <?= h(substr($ev['heure_evenement'], 0, 5)) ?>
+            <a class="maps-link"
+               href="https://www.google.com/maps/search/?q=<?= urlencode($ev['lieu']) ?>"
+               target="_blank"
+               rel="noopener noreferrer"
+               title="Voir sur Google Maps">
+              📍 <?= h($ev['lieu']) ?>
+            </a>
+            · <?= h(substr($ev['heure_evenement'], 0, 5)) ?>
           </p>
           <div class="event-gauge">
             <div class="gauge-bar">
