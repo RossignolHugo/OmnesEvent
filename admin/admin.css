@@ -1,0 +1,158 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 90%;
+    max-width: 1100px;
+    margin: 40px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+h1, h2 {
+    margin-bottom: 15px;
+    color: #222;
+}
+
+.succes {
+    background: #d4f8d4;
+    padding: 10px;
+    border-left: 4px solid #2ecc71;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.erreur {
+    background: #ffe0e0;
+    padding: 10px;
+    border-left: 4px solid #e74c3c;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.vide {
+    color: #777;
+    font-style: italic;
+    padding: 10px 0;
+}
+
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab {
+    padding: 10px 18px;
+    border: none;
+    background: #e6e6e6;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.tab:hover {
+    background: #dcdcdc;
+}
+
+.tab.active {
+    background: #3498db;
+    color: white;
+}
+
+.badge {
+    background: #e74c3c;
+    color: white;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
+
+
+.table-admin {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.table-admin th {
+    background: #3498db;
+    color: white;
+    padding: 10px;
+    text-align: left;
+}
+
+.table-admin td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.table-admin tr:hover {
+    background: #f2f8ff;
+}
+
+.btn-valider {
+    background: #2ecc71;
+    color: white;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-valider:hover {
+    background: #27ae60;
+}
+
+.btn-supprimer {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-supprimer:hover {
+    background: #c0392b;
+}
+
+.badge-role {
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.badge-admin {
+    background: #8e44ad;
+}
+
+.badge-organisateur {
+    background: #2980b9;
+}
+
+.badge-etudiant {
+    background: #16a085;
+}
+
+
+.tab-content {
+    display: none;
+}
+
+#attente {
+    display: block;
+}
