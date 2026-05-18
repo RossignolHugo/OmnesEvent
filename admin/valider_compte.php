@@ -1,10 +1,10 @@
 <?php
-require_once __DIR__ . '/../BDD.php';
-require_once __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../includes/init.php';
 verifierAdmin();
 verifierCsrf();
 
 $id = (int) ($_POST['id'] ?? 0);
+
 if ($id <= 0) {
     messageFlash('erreur', 'Compte invalide.');
     rediriger('admin.php');
