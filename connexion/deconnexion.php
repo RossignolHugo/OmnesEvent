@@ -1,12 +1,5 @@
 <?php
-session_start();
-
-// Vider toutes varibale session
+require_once __DIR__ . '/../includes/init.php';
 $_SESSION = [];
-
-// Détruire session
 session_destroy();
-
-// direction connexion
-header('Location: connexion.php?deconnecte=1');
-exit;
+rediriger('../connexion/connexion.php?deconnecte=1');
