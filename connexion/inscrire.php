@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../header/header.php';
 require_once __DIR__ . '/../BDD.php';
 
-if (estConnecte()) { header('Location: ../index.php'); exit; }
+if (estConnecte()) { header('Location: ../index/index.php'); exit; }
 
 $erreur = '';
 $succes = '';
