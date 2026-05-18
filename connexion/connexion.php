@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
 
-        <p class="lien">Pas de compte ? <a href="inscription.php">S'inscrire</a></p>
+        <p class="lien">Pas de compte ? <a href="inscrire.php">S'inscrire</a></p>
     </div>
 </main>
 
