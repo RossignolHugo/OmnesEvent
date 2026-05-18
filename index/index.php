@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__ . '/BDD.php';
+require_once __DIR__ . '/../BDD.php';
+require_once __DIR__ . '/../header/header.php';
 
 // ── Récupération des filtres GET ──────────────────────────────────────────────
 $q         = trim($_GET['q']        ?? '');
@@ -51,7 +52,7 @@ $assosList = $pdo->query("SELECT DISTINCT association FROM evenements WHERE stat
                  ->fetchAll(PDO::FETCH_COLUMN);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function h(string $s): string {
+function p(string $s): string {
     return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 }
 
@@ -63,7 +64,7 @@ function categorieSlug(string $cat): string {
 function categorieTag(string $cat): string {
     $classes = ['Soirée' => 'tag-soiree', 'Sport' => 'tag-sport', 'Culture' => 'tag-culture', 'Conférence' => 'tag-conf'];
     $class = $classes[$cat] ?? 'tag-conf';
-    return '<span class="tag ' . $class . '">' . h($cat) . '</span>';
+    return '<span class="tag ' . $class . '">' . p($cat) . '</span>';
 }
 
 function categorieEmoji(string $cat): string {
@@ -76,22 +77,34 @@ function prixAffiche(float $prix): string {
     return '<span class="event-price">' . number_format($prix, 2, ',', ' ') . ' €</span>';
 }
 
+function lieuAffiche(string $lieu): string {
+    $lieu = trim($lieu);
+
+    // Lien Google Maps
+    if (str_contains($lieu, 'google.com/maps') || str_contains($lieu, 'maps.app.goo.gl')) {
+        return '<a href="' . p($lieu) . '" target="_blank" class="btn-map">📍 Ouvrir Google Maps</a>';
+    }
+
+    // Adresse classique
+    return '📍 ' . p($lieu);
+}
+
+
 $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'Juin',
            '07'=>'Juil','08'=>'Août','09'=>'Sep','10'=>'Oct','11'=>'Nov','12'=>'Déc'];
+
+
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OmnesEvent — Plateforme Événementielle</title>
-  <link rel="stylesheet" href="../header/header.css" />
-  <link rel="stylesheet" href="../footer/footer.css" />
-  <link rel="stylesheet" href="page_accueil.css" />
+  <link rel="stylesheet" href="index.css" />
 </head>
 <body>
-
-<?php require_once __DIR__ . '/../header/header.php'; ?>
 
 <!-- ──────────────── HERO ──────────────── -->
 <section class="hero">
@@ -107,7 +120,6 @@ $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'J
     </p>
     <div class="hero-actions">
       <a href="#events" class="btn-primary">Explorer les événements</a>
-      <a href="../evenement/creer.php" class="btn-outline">Créer un événement →</a>
     </div>
     <div class="hero-stats">
       <div class="stat">
@@ -133,8 +145,8 @@ $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'J
       <?php if (!empty($evenements)): $next = $evenements[0]; ?>
         <p class="hero-card-title"><?= h($next['titre']) ?></p>
         <p class="hero-card-date">
-          📅 <?= h(date('d/m/Y', strtotime($next['date_evenement']))) ?>
-          · <?= h(substr($next['heure_evenement'], 0, 5)) ?>
+          📅 <?= p(date('d/m/Y', strtotime($next['date_evenement']))) ?>
+          · <?= p(substr($next['heure_evenement'], 0, 5)) ?>
         </p>
       <?php else: ?>
         <p class="hero-card-title">Aucun événement à venir</p>
@@ -158,8 +170,8 @@ $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'J
         <select id="categorie" name="categorie">
           <option value="">Toutes</option>
           <?php foreach (['Soirée','Sport','Culture','Conférence'] as $cat): ?>
-            <option value="<?= h($cat) ?>" <?= $categorie === $cat ? 'selected' : '' ?>>
-              <?= h($cat) ?>
+            <option value="<?= p($cat) ?>" <?= $categorie === $cat ? 'selected' : '' ?>>
+              <?= p($cat) ?>
             </option>
           <?php endforeach; ?>
         </select>
@@ -175,8 +187,8 @@ $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'J
         <select id="asso" name="asso">
           <option value="">Toutes</option>
           <?php foreach ($assosList as $a): ?>
-            <option value="<?= h($a) ?>" <?= $asso === $a ? 'selected' : '' ?>>
-              <?= h($a) ?>
+            <option value="<?= p($a) ?>" <?= $asso === $a ? 'selected' : '' ?>>
+              <?= p($a) ?>
             </option>
           <?php endforeach; ?>
         </select>
@@ -219,7 +231,7 @@ $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'J
       <div class="no-events">
         <span class="no-events-icon">🔍</span>
         <p>Aucun événement trouvé pour ces critères.</p>
-        <a href="page_accueil.php" class="btn-outline">Voir tous les événements</a>
+        <a href="index.php" class="btn-outline">Voir tous les événements</a>
       </div>
     <?php else: ?>
     <div class="events-grid" id="eventsGrid">
@@ -235,31 +247,25 @@ $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'J
         $moisLabel  = $moisFr[$moisNum] ?? date_format($dateObj, 'M');
         $emoji      = categorieEmoji($ev['categorie']);
       ?>
-      <article class="event-card" data-cat="<?= h($slug) ?>">
-        <div class="event-img cat-<?= h($slug) ?>">
+      <article class="event-card" data-cat="<?= p($slug) ?>">
+        <div class="event-img cat-<?= p($slug) ?>">
           <?= categorieTag($ev['categorie']) ?>
           <span class="event-date-badge">
-            <?= h($jour) ?><small><?= h($moisLabel) ?></small>
+            <?= p($jour) ?><small><?= p($moisLabel) ?></small>
           </span>
           <span class="event-emoji" aria-hidden="true"><?= $emoji ?></span>
         </div>
         <div class="event-body">
-          <p class="event-asso"><?= h($ev['association']) ?></p>
+          <p class="event-asso"><?= p($ev['association']) ?></p>
           <h3 class="event-title">
-            <a href="../evenement/detail.php?id=<?= (int)$ev['id'] ?>">
-              <?= h($ev['titre']) ?>
+            <a href="detail.php?id=<?= (int)$ev['id'] ?>">
+              <?= p($ev['titre']) ?>
             </a>
           </h3>
           <p class="event-meta">
-            <a class="maps-link"
-               href="https://www.google.com/maps/search/?q=<?= urlencode($ev['lieu']) ?>"
-               target="_blank"
-               rel="noopener noreferrer"
-               title="Voir sur Google Maps">
-              📍 <?= h($ev['lieu']) ?>
-            </a>
-            · <?= h(substr($ev['heure_evenement'], 0, 5)) ?>
+            <?= lieuAffiche($ev['lieu']) ?> · <?= p(substr($ev['heure_evenement'], 0, 5)) ?>
           </p>
+
           <div class="event-gauge">
             <div class="gauge-bar">
               <div class="gauge-fill <?= $complet ? 'gauge-full' : '' ?>"
@@ -273,10 +279,10 @@ $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'J
           </div>
           <div class="event-footer">
             <?php if ($complet): ?>
-              <a href="../reservation/inscrire.php?id=<?= (int)$ev['id'] ?>"
+              <a href="../reservation/inscription.php?id=<?= (int)$ev['id'] ?>"
                  class="btn-reserve btn-wait">File d'attente</a>
             <?php else: ?>
-              <a href="../reservation/inscrire.php?id=<?= (int)$ev['id'] ?>"
+              <a href="../reservation/inscription.php?id=<?= (int)$ev['id'] ?>"
                  class="btn-reserve">Réserver</a>
             <?php endif; ?>
             <?= prixAffiche((float) $ev['prix']) ?>
@@ -290,43 +296,8 @@ $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'J
   </div>
 </section>
 
-<!-- ──────────────── ASSOCIATIONS ──────────────── -->
-<?php if (!empty($assosList)): ?>
-<section class="assos-section">
-  <div class="page-container">
-    <span class="section-label">✦ Nos organisateurs</span>
-    <h2 class="section-title">Les associations Omnes</h2>
-    <div class="assos-strip">
-      <?php
-      $emojisAsso = ['BDE'=>'🎉','BDS'=>'⚽','Junior Entreprise'=>'💼'];
-      foreach ($assosList as $a):
-        $ico = $emojisAsso[$a] ?? '🏫';
-      ?>
-        <a href="page_accueil.php?asso=<?= urlencode($a) ?>" class="asso-pill">
-          <?= $ico ?> <?= h($a) ?>
-        </a>
-      <?php endforeach; ?>
-    </div>
-  </div>
-</section>
-<?php endif; ?>
-
-<!-- ──────────────── CTA ORGANISATEUR ──────────────── -->
-<section class="cta-section">
-  <div class="page-container">
-    <div class="cta-box">
-      <p class="cta-label">Tu représentes une association ?</p>
-      <h2>Crée ton événement en 2 minutes.</h2>
-      <p class="cta-sub">Publie, gère tes inscrits et scanne les QR codes le jour J.</p>
-      <a href="../connexion/inscription.php" class="btn-primary">
-        Demander un compte Organisateur
-      </a>
-    </div>
-  </div>
-</section>
-
 <?php require_once __DIR__ . '/../footer/footer.php'; ?>
 
-<script src="page_accueil.js"></script>
+<script src="index.js"></script>
 </body>
 </html>

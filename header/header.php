@@ -20,7 +20,7 @@ require_once __DIR__ . '/../BDD.php';
                     <a href="../profil/profil.php">👤 Mon profil</a>
 
                     <?php if (estOrganisateur() || estAdmin()): ?>
-                        <a href="../evenement/evenement.php">✚Géré evenement</a>
+                        <a href="../evenement/creer.php">✚Géré evenement</a>
                     <?php endif; ?>
 
                     <?php if (estAdmin()): ?>
@@ -42,6 +42,7 @@ require_once __DIR__ . '/../BDD.php';
                     <a href="../connexion/connexion.php" class="btn-1">Se connecter</a>
                     <a href="../connexion/inscription.php" class="btn-2">S'inscrire</a>
                 <?php endif; ?>
+                
             </div>
 
         </div>

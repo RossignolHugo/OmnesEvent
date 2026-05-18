@@ -1,132 +1,149 @@
 <?php
-require_once __DIR__ . '/../BDD.php';
-require_once __DIR__ . '/../functions.php';
-verifierOrganisateurOuAdmin();
 
-$erreurs = [];
-$valeurs = [
-    'titre' => '',
-    'description' => '',
-    'date_evenement' => '',
-    'heure_evenement' => '',
-    'lieu' => '',
-    'categorie' => 'Soirée',
-    'association' => '',
-    'capacite_max' => 100,
-    'prix' => '0.00',
-];
+session_start();
+require_once "../BDD.php";
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verifierCsrf();
 
-    foreach ($valeurs as $champ => $defaut) {
-        $valeurs[$champ] = trim($_POST[$champ] ?? (string) $defaut);
-    }
 
-    $categoriesAutorisees = ['Soirée', 'Sport', 'Culture', 'Conférence'];
+if (isset($_POST["ajouter"])) {
 
-    if ($valeurs['titre'] === '') $erreurs[] = 'Le titre est obligatoire.';
-    if ($valeurs['date_evenement'] === '') $erreurs[] = 'La date est obligatoire.';
-    if ($valeurs['heure_evenement'] === '') $erreurs[] = "L'heure est obligatoire.";
-    if ($valeurs['lieu'] === '') $erreurs[] = 'Le lieu est obligatoire.';
-    if ($valeurs['association'] === '') $erreurs[] = "L'association est obligatoire.";
-    if (!in_array($valeurs['categorie'], $categoriesAutorisees, true)) $erreurs[] = 'Catégorie invalide.';
-    if ((int) $valeurs['capacite_max'] <= 0) $erreurs[] = 'La capacité maximale doit être supérieure à 0.';
-    if ((float) $valeurs['prix'] < 0) $erreurs[] = 'Le prix ne peut pas être négatif.';
+    $req = $pdo->prepare(
+        "INSERT INTO evenements
+        (
+            titre,
+            description,
+            date_evenement,
+            heure_evenement,
+            lieu,
+            categorie,
+            association,
+            capacite_max,
+            prix,
+            organisateur_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    );
 
-    $affiche = null;
-    if (empty($erreurs)) {
-        try {
-            $affiche = enregistrerAffiche($_FILES['affiche'] ?? []);
-        } catch (Throwable $e) {
-            $erreurs[] = $e->getMessage();
-        }
-    }
-
-    if (empty($erreurs)) {
-        $stmt = $pdo->prepare("INSERT INTO evenements (titre, description, date_evenement, heure_evenement, lieu, categorie, association, capacite_max, prix, affiche, organisateur_id, statut)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'publié')");
-        $stmt->execute([
-            $valeurs['titre'],
-            $valeurs['description'],
-            $valeurs['date_evenement'],
-            $valeurs['heure_evenement'],
-            $valeurs['lieu'],
-            $valeurs['categorie'],
-            $valeurs['association'],
-            (int) $valeurs['capacite_max'],
-            (float) $valeurs['prix'],
-            $affiche,
-            utilisateurId(),
-        ]);
-
-        messageFlash('succes', 'Événement créé avec succès.');
-        rediriger('../organisateur/dashboard.php');
-    }
+    $req->execute([
+        $_POST["titre"],
+        $_POST["description"],
+        $_POST["date_evenement"],
+        $_POST["heure_evenement"],
+        $_POST["lieu"],
+        $_POST["categorie"],
+        $_POST["association"],
+        $_POST["capacite_max"],
+        $_POST["prix"],
+    ]);
 }
+
+if (isset($_GET["supprimer"])) {
+
+    $req = $pdo->prepare(
+        "DELETE FROM evenements WHERE id = ?"
+    );
+
+    $req->execute([
+        $_GET["supprimer"]
+    ]);
+}
+
+$events = $pdo->query("SELECT * FROM evenements ORDER BY id DESC")
+              ->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Créer un événement - OmnesEvent</title>
+    <title>Admin - Événements</title>
 </head>
+
 <body>
-<?php require_once __DIR__ . '/../header/header.php'; ?>
 
-<main>
-    <h1>Créer un événement</h1>
+<h1>Panneau Admin - Événements</h1>
 
-    <?php if (!empty($erreurs)): ?>
-        <ul>
-            <?php foreach ($erreurs as $erreur): ?>
-                <li><?= h($erreur) ?></li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
+<hr>
 
-    <form method="post" enctype="multipart/form-data">
-        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+<h2>Ajouter un événement</h2>
 
-        <label for="titre">Titre</label>
-        <input type="text" id="titre" name="titre" value="<?= h($valeurs['titre']) ?>" required>
+<form method="POST">
 
-        <label for="description">Description</label>
-        <textarea id="description" name="description" rows="5"><?= h($valeurs['description']) ?></textarea>
+    <input type="text" name="titre" placeholder="Titre" required>
+    <br><br>
 
-        <label for="date_evenement">Date</label>
-        <input type="date" id="date_evenement" name="date_evenement" value="<?= h($valeurs['date_evenement']) ?>" required>
+    <textarea name="description" placeholder="Description" required></textarea>
+    <br><br>
 
-        <label for="heure_evenement">Heure</label>
-        <input type="time" id="heure_evenement" name="heure_evenement" value="<?= h($valeurs['heure_evenement']) ?>" required>
+    <input type="date" name="date_evenement" required>
+    <br><br>
 
-        <label for="lieu">Lieu</label>
-        <input type="text" id="lieu" name="lieu" value="<?= h($valeurs['lieu']) ?>" required>
+    <input type="time" name="heure_evenement" required>
+    <br><br>
 
-        <label for="categorie">Catégorie</label>
-        <select id="categorie" name="categorie" required>
-            <?php foreach (['Soirée', 'Sport', 'Culture', 'Conférence'] as $categorie): ?>
-                <option value="<?= h($categorie) ?>" <?= $valeurs['categorie'] === $categorie ? 'selected' : '' ?>><?= h($categorie) ?></option>
-            <?php endforeach; ?>
-        </select>
+    <input type="text" name="lieu" placeholder="Lieu" required>
+    <br><br>
 
-        <label for="association">Association</label>
-        <input type="text" id="association" name="association" value="<?= h($valeurs['association']) ?>" required>
+    <select name="categorie" required>
+        <option value="Soirée">Soirée</option>
+        <option value="Sport">Sport</option>
+        <option value="Culture">Culture</option>
+        <option value="Conférence">Conférence</option>
+    </select>
 
-        <label for="capacite_max">Capacité maximale</label>
-        <input type="number" id="capacite_max" name="capacite_max" min="1" value="<?= h((string) $valeurs['capacite_max']) ?>" required>
+    <br><br>
 
-        <label for="prix">Prix</label>
-        <input type="number" id="prix" name="prix" min="0" step="0.01" value="<?= h((string) $valeurs['prix']) ?>">
+    <input type="text" name="association" placeholder="Association" required>
+    <br><br>
 
-        <label for="affiche">Affiche</label>
-        <input type="file" id="affiche" name="affiche" accept="image/*">
+    <input type="number" name="capacite_max" placeholder="Capacité max" required>
+    <br><br>
 
-        <button type="submit">Publier l'événement</button>
-    </form>
-</main>
+    <input type="number" step="0.01" name="prix" placeholder="Prix" required>
+    <br><br>
 
-<?php require_once __DIR__ . '/../footer/footer.php'; ?>
+    <button type="submit" name="ajouter">
+        Ajouter l'événement
+    </button>
+
+</form>
+
+<hr>
+
+<h2>Liste des événements</h2>
+
+<?php if (count($events) == 0): ?>
+    <p>Aucun événement.</p>
+<?php endif; ?>
+
+<?php foreach ($events as $event): ?>
+
+<div style="border:1px solid black; padding:10px; margin:10px;">
+
+    <h3><?= htmlspecialchars($event["titre"]) ?></h3>
+
+    <p><?= htmlspecialchars($event["description"]) ?></p>
+
+    <p> <?= $event["date_evenement"] ?> à <?= $event["heure_evenement"] ?></p>
+
+    <p> <?= htmlspecialchars($event["lieu"]) ?></p>
+
+    <p> <?= $event["categorie"] ?></p>
+
+    <p> <?= htmlspecialchars($event["association"]) ?></p>
+
+    <p><?= $event["capacite_max"] ?> places</p>
+
+    <p><?= $event["prix"] ?> €</p>
+
+    <a href="?supprimer=<?= $event["id"] ?>">
+        <button>Supprimer</button>
+    </a>
+
+</div>
+
+<?php endforeach; ?>
+
 </body>
 </html>

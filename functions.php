@@ -4,20 +4,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-function h(?string $valeur): string
-{
-    return htmlspecialchars($valeur ?? '', ENT_QUOTES, 'UTF-8');
-}
-
 function rediriger(string $url): void
 {
     header('Location: ' . $url);
     exit;
-}
-
-function estConnecte(): bool
-{
-    return !empty($_SESSION['utilisateur_id']);
 }
 
 function roleUtilisateur(): ?string
@@ -25,15 +15,7 @@ function roleUtilisateur(): ?string
     return $_SESSION['role'] ?? null;
 }
 
-function estAdmin(): bool
-{
-    return estConnecte() && roleUtilisateur() === 'admin';
-}
 
-function estOrganisateur(): bool
-{
-    return estConnecte() && roleUtilisateur() === 'organisateur';
-}
 
 function utilisateurId(): ?int
 {

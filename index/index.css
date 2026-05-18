@@ -72,6 +72,22 @@ a { text-decoration: none; color: inherit; }
     color: #fff;
 }
 
+.btn-map {
+    display: inline-block;
+    background: #3498db;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-right: 6px;
+}
+
+.btn-map:hover {
+    background: #217dbb;
+}
+
+
 /* ═══════════════════════════════════════
    HERO
 ═══════════════════════════════════════ */
@@ -532,19 +548,6 @@ a { text-decoration: none; color: inherit; }
     font-size: 0.85rem;
     color: var(--text-muted);
     margin: 0;
-}
-
-.maps-link {
-    color: var(--text-muted);
-    text-decoration: none;
-    border-bottom: 1px dashed var(--border);
-    transition: var(--transition);
-    display: inline;
-}
-
-.maps-link:hover {
-    color: var(--blue);
-    border-bottom-color: var(--blue);
 }
 
 /* Jauge de capacité */

@@ -91,9 +91,9 @@ charset = utf8 ',
             </form>
 
 
-            <p class="lien">Pas de compte ? <a href="inscription.php">S'inscrire</a></p>
-        </div>
-    </main>
+        <p class="lien">Pas de compte ? <a href="inscrire.php">S'inscrire</a></p>
+    </div>
+</main>
 
     <?php require_once __DIR__ . '/../footer/footer.php'; ?>
 </body>

@@ -1,6 +1,7 @@
+<?php require_once __DIR__ . '/../header/header.php'; ?>
 <?php
 require_once __DIR__ . '/../BDD.php';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 $id = (int) ($_GET['id'] ?? 0);
 $stmt = $pdo->prepare("SELECT e.*, u.prenom, u.nom,
@@ -31,273 +32,10 @@ $complet    = ($nbInscrits >= $capacite);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= h($event['titre']) ?> - OmnesEvent</title>
-    <link rel="stylesheet" href="../evenement/evenement.css">
-    <style>
-        /* ── Styles spécifiques à la page détail ── */
-        main { width: 92%; max-width: 900px; margin: 40px auto; }
+    <link rel="stylesheet" href="detail.css">
 
-        .detail-header {
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            border-radius: 14px;
-            overflow: hidden;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-        }
-
-        .detail-banner {
-            height: 220px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 5rem;
-            position: relative;
-        }
-        .cat-soiree    { background: linear-gradient(135deg, #1a1a3e, #4a2080); }
-        .cat-sport     { background: linear-gradient(135deg, #0a3020, #1a7a45); }
-        .cat-culture   { background: linear-gradient(135deg, #3a2000, #a05a00); }
-        .cat-conference{ background: linear-gradient(135deg, #0a1a4a, #003399); }
-
-        .detail-banner-tag {
-            position: absolute;
-            top: 16px; left: 16px;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(4px);
-            color: #fff;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            padding: 5px 12px;
-            border-radius: 50px;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-
-        .detail-body { padding: 28px 32px; }
-
-        .detail-asso {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #007bff;
-            font-weight: 700;
-            margin: 0 0 8px;
-        }
-
-        .detail-title {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #222;
-            margin: 0 0 20px;
-            line-height: 1.2;
-        }
-
-        .detail-meta-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-
-        .meta-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            background: #f8f8f8;
-            border: 1px solid #ebebeb;
-            border-radius: 10px;
-            padding: 14px 16px;
-        }
-
-        .meta-icon { font-size: 1.3rem; flex-shrink: 0; line-height: 1; margin-top: 1px; }
-
-        .meta-label {
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            color: #999;
-            font-weight: 700;
-            display: block;
-            margin-bottom: 3px;
-        }
-
-        .meta-value {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #222;
-        }
-
-        /* Lieu cliquable */
-        .meta-maps-link {
-            color: #222;
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            transition: 0.2s ease;
-            width: 100%;
-        }
-
-        .meta-maps-link:hover .meta-value {
-            color: #007bff;
-        }
-
-        .maps-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.7rem;
-            color: #007bff;
-            font-weight: 600;
-            margin-top: 4px;
-        }
-
-        .maps-badge svg { flex-shrink: 0; }
-
-        /* Jauge */
-        .detail-gauge { margin-bottom: 24px; }
-        .detail-gauge-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-            color: #666;
-            margin-bottom: 6px;
-        }
-        .detail-gauge-label strong { color: #222; }
-        .gauge-bar { height: 8px; background: #ececec; border-radius: 50px; overflow: hidden; }
-        .gauge-fill { height: 100%; border-radius: 50px; transition: width 0.8s ease;
-            background: linear-gradient(90deg, #0069d9, #007bff); }
-        .gauge-fill.gauge-full { background: linear-gradient(90deg, #c0392b, #dc3545); }
-        .gauge-complet { color: #dc3545; font-weight: 600; font-size: 0.85rem; margin-top: 4px; display: block; }
-
-        /* Description */
-        .detail-desc {
-            font-size: 1rem;
-            color: #444;
-            line-height: 1.75;
-            margin: 0 0 28px;
-        }
-
-        /* Boutons action */
-        .detail-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            padding-top: 20px;
-            border-top: 1px solid #e5e5e5;
-        }
-
-        .btn-reserve-lg {
-            display: inline-block;
-            background: #007bff;
-            color: #fff;
-            padding: 13px 28px;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 1rem;
-            transition: 0.2s ease;
-        }
-        .btn-reserve-lg:hover { background: #0069d9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,123,255,0.35); }
-
-        .btn-reserve-lg.btn-wait {
-            background: #f0f0f0;
-            color: #666;
-            border: 1px solid #ddd;
-        }
-        .btn-reserve-lg.btn-wait:hover { background: #e5e5e5; color: #333; }
-
-        .btn-maps-lg {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border: 2px solid #007bff;
-            color: #007bff;
-            padding: 11px 22px;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 1rem;
-            transition: 0.2s ease;
-        }
-        .btn-maps-lg:hover { background: #007bff; color: #fff; }
-
-        .btn-edit {
-            display: inline-block;
-            border: 1px solid #ccc;
-            color: #666;
-            padding: 11px 20px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: 0.2s ease;
-        }
-        .btn-edit:hover { border-color: #888; color: #333; }
-
-        /* Affiche */
-        .detail-affiche {
-            margin-bottom: 24px;
-        }
-        .detail-affiche img {
-            width: 100%;
-            max-height: 400px;
-            object-fit: cover;
-            border-radius: 10px;
-            border: 1px solid #e5e5e5;
-        }
-
-        /* ── Carte Google Maps intégrée ── */
-        .maps-section {
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            border-radius: 14px;
-            overflow: hidden;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-        }
-
-        .maps-section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .maps-section-header h3 {
-            font-size: 1rem;
-            font-weight: 700;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .maps-open-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #007bff;
-            transition: 0.2s ease;
-        }
-        .maps-open-link:hover { color: #0069d9; text-decoration: underline; }
-
-        .maps-iframe-wrap { position: relative; width: 100%; height: 320px; }
-        .maps-iframe-wrap iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-        }
-
-        @media (max-width: 640px) {
-            .detail-body { padding: 20px 18px; }
-            .detail-meta-grid { grid-template-columns: 1fr; }
-            .detail-title { font-size: 1.5rem; }
-            main { margin: 20px auto; }
-        }
-    </style>
 </head>
 <body>
-<?php require_once __DIR__ . '/../header/header.php'; ?>
 
 <main>
 
@@ -400,10 +138,10 @@ $complet    = ($nbInscrits >= $capacite);
             <!-- Boutons d'action -->
             <div class="detail-actions">
                 <?php if ($complet): ?>
-                    <a href="../reservation/inscrire.php?id=<?= (int)$event['id'] ?>"
+                    <a href="../reservation/inscription.php?id=<?= (int)$event['id'] ?>"
                        class="btn-reserve-lg btn-wait">📋 File d'attente</a>
                 <?php else: ?>
-                    <a href="../reservation/inscrire.php?id=<?= (int)$event['id'] ?>"
+                    <a href="../reservation/inscription.php?id=<?= (int)$event['id'] ?>"
                        class="btn-reserve-lg">🎟️ Réserver ma place</a>
                 <?php endif; ?>
 
