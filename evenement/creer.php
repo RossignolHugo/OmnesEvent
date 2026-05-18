@@ -1,149 +1,133 @@
 <?php
+require_once __DIR__ . '/../includes/init.php';
+verifierOrganisateurOuAdmin();
 
-session_start();
-require_once "../BDD.php";
+$erreur = '';
+$succes = '';
+$f = [
+    'titre' => '',
+    'description' => '',
+    'date_evenement' => '',
+    'heure_evenement' => '',
+    'lieu' => '',
+    'categorie' => 'Soirée',
+    'association' => '',
+    'capacite_max' => '100',
+    'prix' => '0.00',
+];
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifierCsrf();
 
+    $f['titre'] = trim($_POST['titre'] ?? '');
+    $f['description'] = trim($_POST['description'] ?? '');
+    $f['date_evenement'] = trim($_POST['date_evenement'] ?? '');
+    $f['heure_evenement'] = trim($_POST['heure_evenement'] ?? '');
+    $f['lieu'] = trim($_POST['lieu'] ?? '');
+    $f['categorie'] = $_POST['categorie'] ?? 'Soirée';
+    $f['association'] = trim($_POST['association'] ?? '');
+    $f['capacite_max'] = trim($_POST['capacite_max'] ?? '100');
+    $f['prix'] = trim($_POST['prix'] ?? '0');
 
-if (isset($_POST["ajouter"])) {
+    $categories = ['Soirée', 'Sport', 'Culture', 'Conférence'];
 
-    $req = $pdo->prepare(
-        "INSERT INTO evenements
-        (
-            titre,
-            description,
-            date_evenement,
-            heure_evenement,
-            lieu,
-            categorie,
-            association,
-            capacite_max,
-            prix,
-            organisateur_id
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    );
+    if ($f['titre'] === '' || $f['description'] === '' || $f['date_evenement'] === '' || $f['heure_evenement'] === '' || $f['lieu'] === '' || $f['association'] === '') {
+        $erreur = 'Tous les champs obligatoires doivent être remplis.';
+    } elseif (!in_array($f['categorie'], $categories, true)) {
+        $erreur = 'Catégorie invalide.';
+    } elseif ((int) $f['capacite_max'] <= 0) {
+        $erreur = 'La capacité maximale doit être supérieure à 0.';
+    } elseif ((float) $f['prix'] < 0) {
+        $erreur = 'Le prix ne peut pas être négatif.';
+    } else {
+        try {
+            $affiche = enregistrerAffiche($_FILES['affiche'] ?? []);
 
-    $req->execute([
-        $_POST["titre"],
-        $_POST["description"],
-        $_POST["date_evenement"],
-        $_POST["heure_evenement"],
-        $_POST["lieu"],
-        $_POST["categorie"],
-        $_POST["association"],
-        $_POST["capacite_max"],
-        $_POST["prix"],
-    ]);
+            $req = $pdo->prepare('
+                INSERT INTO evenements
+                (titre, description, date_evenement, heure_evenement, lieu, categorie, association, capacite_max, prix, affiche, organisateur_id, statut)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "publié")
+            ');
+            $req->execute([
+                $f['titre'],
+                $f['description'],
+                $f['date_evenement'],
+                $f['heure_evenement'],
+                $f['lieu'],
+                $f['categorie'],
+                $f['association'],
+                (int) $f['capacite_max'],
+                (float) $f['prix'],
+                $affiche,
+                utilisateurId(),
+            ]);
+
+            messageFlash('succes', 'Événement créé avec succès.');
+            rediriger('../organisateur/dashboard.php');
+        } catch (Throwable $e) {
+            $erreur = $e->getMessage();
+        }
+    }
 }
-
-if (isset($_GET["supprimer"])) {
-
-    $req = $pdo->prepare(
-        "DELETE FROM evenements WHERE id = ?"
-    );
-
-    $req->execute([
-        $_GET["supprimer"]
-    ]);
-}
-
-$events = $pdo->query("SELECT * FROM evenements ORDER BY id DESC")
-              ->fetchAll(PDO::FETCH_ASSOC);
-
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Événements</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer un événement - OmnesEvent</title>
+    <link rel="stylesheet" href="../header/header.css">
+    <link rel="stylesheet" href="evenement.css">
 </head>
-
 <body>
+<?php require_once __DIR__ . '/../header/header.php'; ?>
+<main>
+    <h1>Créer un événement</h1>
 
-<h1>Panneau Admin - Événements</h1>
+    <?php if ($erreur): ?>
+        <p class="erreur">⚠️ <?= h($erreur) ?></p>
+    <?php endif; ?>
 
-<hr>
+    <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
 
-<h2>Ajouter un événement</h2>
+        <label>Titre</label>
+        <input type="text" name="titre" value="<?= h($f['titre']) ?>" required>
 
-<form method="POST">
+        <label>Description</label>
+        <textarea name="description" required><?= h($f['description']) ?></textarea>
 
-    <input type="text" name="titre" placeholder="Titre" required>
-    <br><br>
+        <label>Date</label>
+        <input type="date" name="date_evenement" value="<?= h($f['date_evenement']) ?>" required>
 
-    <textarea name="description" placeholder="Description" required></textarea>
-    <br><br>
+        <label>Heure</label>
+        <input type="time" name="heure_evenement" value="<?= h($f['heure_evenement']) ?>" required>
 
-    <input type="date" name="date_evenement" required>
-    <br><br>
+        <label>Lieu</label>
+        <input type="text" name="lieu" value="<?= h($f['lieu']) ?>" required>
 
-    <input type="time" name="heure_evenement" required>
-    <br><br>
+        <label>Catégorie</label>
+        <select name="categorie" required>
+            <?php foreach (['Soirée', 'Sport', 'Culture', 'Conférence'] as $categorie): ?>
+                <option value="<?= h($categorie) ?>" <?= $f['categorie'] === $categorie ? 'selected' : '' ?>><?= h($categorie) ?></option>
+            <?php endforeach; ?>
+        </select>
 
-    <input type="text" name="lieu" placeholder="Lieu" required>
-    <br><br>
+        <label>Association</label>
+        <input type="text" name="association" value="<?= h($f['association']) ?>" required>
 
-    <select name="categorie" required>
-        <option value="Soirée">Soirée</option>
-        <option value="Sport">Sport</option>
-        <option value="Culture">Culture</option>
-        <option value="Conférence">Conférence</option>
-    </select>
+        <label>Capacité maximale</label>
+        <input type="number" name="capacite_max" min="1" value="<?= h($f['capacite_max']) ?>" required>
 
-    <br><br>
+        <label>Prix en euros</label>
+        <input type="number" step="0.01" min="0" name="prix" value="<?= h($f['prix']) ?>" required>
 
-    <input type="text" name="association" placeholder="Association" required>
-    <br><br>
+        <label>Affiche</label>
+        <input type="file" name="affiche" accept="image/png,image/jpeg,image/gif,image/webp">
 
-    <input type="number" name="capacite_max" placeholder="Capacité max" required>
-    <br><br>
-
-    <input type="number" step="0.01" name="prix" placeholder="Prix" required>
-    <br><br>
-
-    <button type="submit" name="ajouter">
-        Ajouter l'événement
-    </button>
-
-</form>
-
-<hr>
-
-<h2>Liste des événements</h2>
-
-<?php if (count($events) == 0): ?>
-    <p>Aucun événement.</p>
-<?php endif; ?>
-
-<?php foreach ($events as $event): ?>
-
-<div style="border:1px solid black; padding:10px; margin:10px;">
-
-    <h3><?= htmlspecialchars($event["titre"]) ?></h3>
-
-    <p><?= htmlspecialchars($event["description"]) ?></p>
-
-    <p> <?= $event["date_evenement"] ?> à <?= $event["heure_evenement"] ?></p>
-
-    <p> <?= htmlspecialchars($event["lieu"]) ?></p>
-
-    <p> <?= $event["categorie"] ?></p>
-
-    <p> <?= htmlspecialchars($event["association"]) ?></p>
-
-    <p><?= $event["capacite_max"] ?> places</p>
-
-    <p><?= $event["prix"] ?> €</p>
-
-    <a href="?supprimer=<?= $event["id"] ?>">
-        <button>Supprimer</button>
-    </a>
-
-</div>
-
-<?php endforeach; ?>
-
+        <button type="submit">Publier l'événement</button>
+    </form>
+</main>
+<?php require_once __DIR__ . '/../footer/footer.php'; ?>
 </body>
 </html>
