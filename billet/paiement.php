@@ -1,126 +1,124 @@
 <?php
-require_once __DIR__ . '/../header/header.php';
-require_once __DIR__ . '/../BDD.php';
+require_once __DIR__ . '/../includes/init.php';
+verifierConnexion();
 
-if (!estConnecte()) {
-    header('Location: ../connexion/connexion.php');
-    exit;
-}
+$userId = utilisateurId();
+$eventId = (int) ($_GET['event_id'] ?? 0);
+$erreur = '';
 
-$user_id  = (int)$_SESSION['id'];
-$event_id = (int)($_GET['event_id'] ?? 0);
-$erreur   = '';
-
-//petite fonction utilitaire des familles
-function fetchOne($pdo, $sql, $params = []) {
-    $req = $pdo->prepare($sql);
-    $req->execute($params);
-    return $req->fetch(PDO::FETCH_ASSOC);
-}
-
-//evenement payant ou pas?
-$event = fetchOne($pdo, 'SELECT * FROM evenements WHERE id = ? AND prix > 0', [$event_id]);
+$stmt = $pdo->prepare('SELECT * FROM evenements WHERE id = ? AND prix > 0 AND statut = "publié" LIMIT 1');
+$stmt->execute([$eventId]);
+$event = $stmt->fetch();
 
 if (!$event) {
-    header('Location: billet.php');
-    exit;
-}
-
-//Déja inscrit?
-$deja = fetchOne($pdo,
-    'SELECT id FROM inscriptions WHERE utilisateur_id = ? AND evenement_id = ? AND statut = "confirmé"',
-    [$user_id, $event_id]
-);
-
-if ($deja) {
-    header('Location: billet.php');
-    exit;
+    messageFlash('erreur', 'Événement payant introuvable.');
+    rediriger('billet.php');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifierCsrf();
 
-    $numero = preg_replace('/\s/', '', trim($_POST['numero'] ?? ''));
+    $numero = preg_replace('/\s+/', '', trim($_POST['numero'] ?? ''));
     $expiry = trim($_POST['expiry'] ?? '');
-    $cvc    = trim($_POST['cvc'] ?? '');
+    $cvc = trim($_POST['cvc'] ?? '');
 
-    // Validation
-    if (!$numero || !$expiry || !$cvc) {
-        $erreur = 'Remplissez tous les champs de paiement.';
-    } elseif (!preg_match('/^\d{16}$/', $numero)) {
-        $erreur = 'Numéro de carte invalide (16 chiffres requis).';
+    if (!preg_match('/^\d{16}$/', $numero)) {
+        $erreur = 'Numéro de carte invalide : 16 chiffres requis.';
     } elseif (!preg_match('/^\d{2}\/\d{2}$/', $expiry)) {
-        $erreur = 'Date d\'expiration invalide (MM/AA).';
+        $erreur = 'Date d’expiration invalide : format MM/AA.';
     } elseif (!preg_match('/^\d{3}$/', $cvc)) {
-        $erreur = 'CVC invalide (3 chiffres requis).';
+        $erreur = 'CVC invalide : 3 chiffres requis.';
     } else {
+        try {
+            $pdo->beginTransaction();
 
-        // paiement valide -> creation billet
-        $code = 'TKT-' . date('Ymd') . "-$event_id-" . rand(1000, 9999);
+            $stmt = $pdo->prepare('SELECT * FROM evenements WHERE id = ? AND statut = "publié" FOR UPDATE');
+            $stmt->execute([$eventId]);
+            $event = $stmt->fetch();
 
-        $pdo->prepare('
-            INSERT INTO inscriptions (utilisateur_id, evenement_id, code_billet, statut, paiement_statut, montant_paye)
-            VALUES (?, ?, ?, "confirmé", "payé", ?)
-        ')->execute([$user_id, $event_id, $code, $event['prix']]);
+            $stmt = $pdo->prepare('SELECT id FROM inscriptions WHERE utilisateur_id = ? AND evenement_id = ? AND statut <> "annulé" LIMIT 1');
+            $stmt->execute([$userId, $eventId]);
+            if ($stmt->fetch()) {
+                throw new RuntimeException('Vous êtes déjà inscrit à cet événement.');
+            }
 
-        // enlever les place
-        $pdo->prepare('UPDATE evenements SET capacite_max = capacite_max - 1 WHERE id = ?')
-            ->execute([$event_id]);
+            $stmt = $pdo->prepare('SELECT COUNT(*) FROM inscriptions WHERE evenement_id = ? AND statut IN ("confirmé", "présent")');
+            $stmt->execute([$eventId]);
+            $nbInscrits = (int) $stmt->fetchColumn();
 
-        header('Location: billet.php?paye=1&code=' . urlencode($code));
-        exit;
+            if ($nbInscrits >= (int) $event['capacite_max']) {
+                $stmt = $pdo->prepare('SELECT COALESCE(MAX(position), 0) + 1 FROM file_attente WHERE evenement_id = ?');
+                $stmt->execute([$eventId]);
+                $position = (int) $stmt->fetchColumn();
+
+                $insertAttente = $pdo->prepare('INSERT IGNORE INTO file_attente (utilisateur_id, evenement_id, position) VALUES (?, ?, ?)');
+                $insertAttente->execute([$userId, $eventId, $position]);
+
+                $pdo->commit();
+                messageFlash('erreur', "L'événement est complet. Vous avez été placé en file d'attente.");
+                rediriger('billet.php');
+            }
+
+            $code = genererCodeBillet();
+            $insert = $pdo->prepare('
+                INSERT INTO inscriptions (utilisateur_id, evenement_id, code_billet, statut, paiement_statut, montant_paye)
+                VALUES (?, ?, ?, "confirmé", "payé", ?)
+            ');
+            $insert->execute([$userId, $eventId, $code, (float) $event['prix']]);
+
+            $pdo->commit();
+            messageFlash('succes', 'Paiement simulé validé. Votre billet est disponible.');
+            rediriger('billet.php');
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $erreur = $e->getMessage();
+        }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Paiement — OmnesEvent</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement - OmnesEvent</title>
     <link rel="stylesheet" href="../header/header.css">
     <link rel="stylesheet" href="../connexion/connexion.css">
     <link rel="stylesheet" href="billet.css">
 </head>
-
 <body>
+<?php require_once __DIR__ . '/../header/header.php'; ?>
 <main>
     <div class="form-card">
-        <h1>💳 Paiement</h1>
-
-        <div class="recap">
-            <p><strong><?= h($event['titre']) ?></strong></p>
-            <p>📅 <?= h($event['date_evenement']) ?> — 🕐 <?= h(substr($event['heure_evenement'], 0, 5)) ?></p>
-            <p>📍 <?= h($event['lieu']) ?></p>
-            <p class="total">Total : <strong><?= number_format($event['prix'], 2) ?> €</strong></p>
-        </div>
+        <h1>Paiement simulé</h1>
+        <p><strong><?= h($event['titre']) ?></strong></p>
+        <p><?= h($event['date_evenement']) ?> à <?= h(substr($event['heure_evenement'], 0, 5)) ?> — <?= h($event['lieu']) ?></p>
+        <p>Total : <strong><?= number_format((float) $event['prix'], 2, ',', ' ') ?> €</strong></p>
 
         <?php if ($erreur): ?>
             <p class="erreur">⚠️ <?= h($erreur) ?></p>
         <?php endif; ?>
 
-        <form method="POST">
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+
             <label>Numéro de carte</label>
-            <input type="text" name="numero" placeholder="1234 5678 9012 3456" maxlength="19" required>
+            <input type="text" name="numero" maxlength="19" placeholder="1234 5678 9012 3456" required>
 
-            <div class="form-row">
-                <div>
-                    <label>Expiration</label>
-                    <input type="text" name="expiry" placeholder="MM/AA" maxlength="5" required>
-                </div>
-                <div>
-                    <label>CVC</label>
-                    <input type="text" name="cvc" placeholder="123" maxlength="3" required>
-                </div>
-            </div>
+            <label>Expiration</label>
+            <input type="text" name="expiry" maxlength="5" placeholder="MM/AA" required>
 
-            <button type="submit">Payer <?= number_format($event['prix'], 2) ?> €</button>
+            <label>CVC</label>
+            <input type="text" name="cvc" maxlength="3" placeholder="123" required>
+
+            <button type="submit">Payer <?= number_format((float) $event['prix'], 2, ',', ' ') ?> €</button>
         </form>
 
-        <p class="lien"><a href="billet.php">← Annuler</a></p>
+        <p><a href="../index/index.php">Annuler</a></p>
     </div>
 </main>
-
 <?php require_once __DIR__ . '/../footer/footer.php'; ?>
 </body>
 </html>
