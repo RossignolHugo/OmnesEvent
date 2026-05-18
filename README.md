@@ -1,6 +1,3 @@
-(Je suis en train de mettre tout au propre + tester si le site fonctionne toujours, j'ai pas encor fini...
-Normalement, j'ai fais en sorte de ne rien casser l'ancien code...)
-
 # OmnesEvent
 
 Plateforme web de billetterie et de gestion d'événements dédiée aux étudiants et au personnel d'Omnes.
