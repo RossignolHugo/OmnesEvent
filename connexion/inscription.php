@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['prenom'] = h($f['prenom']);
                 $_SESSION['email']  = $f['email'];
                 $_SESSION['role']   = $f['role'];
-                header('Location: ../index.php');
+                header('Location: ../index/index.php');
                 exit;
             }
         }
