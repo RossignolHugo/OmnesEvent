@@ -5,17 +5,22 @@ verifierConnexion();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     rediriger('billet.php');
 }
+
 if (!isset($_POST['id'], $_POST['csrf_token'])) {
     messageFlash('erreur', 'Requête invalide.');
     rediriger('billet.php');
 }
-if (function_exists('csrfVerify')) {
-    csrfVerify($_POST['csrf_token']);
+
+// Vérification CSRF (remplace csrfVerify)
+if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+    messageFlash('erreur', 'Token CSRF invalide.');
+    rediriger('billet.php');
 }
+
 $inscriptionId = (int) $_POST['id'];
 $userId = utilisateurId();
 
-// vérif billet appartient utilisateur
+// Vérifier que le billet appartient à l'utilisateur
 $stmt = $pdo->prepare('SELECT * FROM inscriptions WHERE id = ? AND utilisateur_id = ? LIMIT 1');
 $stmt->execute([$inscriptionId, $userId]);
 $billet = $stmt->fetch();
@@ -25,15 +30,9 @@ if (!$billet) {
     rediriger('billet.php');
 }
 
-//déja annulé
-if ($billet['statut'] === 'annulé') {
-    messageFlash('erreur', 'Ce billet est déjà annulé.');
-    rediriger('billet.php');
-}
-
-//annuler billet
+// Annuler le billet
 $stmt = $pdo->prepare('UPDATE inscriptions SET statut = "annulé" WHERE id = ?');
 $stmt->execute([$inscriptionId]);
 
-messageFlash('succes', 'Votre billet a été annulé.');
+messageFlash('succes', 'Vous êtes maintenant désinscrit de cet événement.');
 rediriger('billet.php');
