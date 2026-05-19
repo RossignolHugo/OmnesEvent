@@ -3,11 +3,11 @@ require_once __DIR__ . '/../includes/init.php';
 verifierConnexion();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    rediriger('mesBillets.php');
+    rediriger('billet.php');
 }
 if (!isset($_POST['id'], $_POST['csrf_token'])) {
     messageFlash('erreur', 'Requête invalide.');
-    rediriger('mesBillets.php');
+    rediriger('billet.php');
 }
 if (function_exists('csrfVerify')) {
     csrfVerify($_POST['csrf_token']);
@@ -22,13 +22,13 @@ $billet = $stmt->fetch();
 
 if (!$billet) {
     messageFlash('erreur', 'Billet introuvable.');
-    rediriger('mesBillets.php');
+    rediriger('billet.php');
 }
 
 //déja annulé
 if ($billet['statut'] === 'annulé') {
     messageFlash('erreur', 'Ce billet est déjà annulé.');
-    rediriger('mesBillets.php');
+    rediriger('billet.php');
 }
 
 //annuler billet
